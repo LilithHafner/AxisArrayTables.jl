@@ -1,0 +1,17 @@
+Methods that could be implemented but are not in order to keep the codebase small and
+because I don't yet see an advantage from implementing them
+
+Base.length(m::AxisArrayTable) = length(data(m)) # no measurable performance improvement
+
+TODO investigate whether these optional methods are worth implementing
+
+Optional as a Table
+Tables.schema(m::AxisArrayTable) = Tables.Schema(propertynames(m), fill(eltype(m), size(m, 2)))
+Tables.materializer(::Type{AxisArrayTable}) = ...
+Tables.subset(x::MyTable, inds; viewhint) = ...
+
+Optional as a Tables.AbstractColumns
+Tables.getcolumn(m::AxisArrayTable, ::Type{T}, col::Int, nm::Symbol) where T = matrix(m)[:, col]
+
+Work around an upstream bug https://github.com/JuliaData/Tables.jl/issues/316
+Tables.rows(m::AbstractAxisArrayTable) = Tables.RowIterator(m, Int(Tables.rowcount(m)))
