@@ -89,7 +89,11 @@ combine_axes(x, y, args...) = combine_axes(combine_axes(x, y), args...)
 combine_axes(::Nothing, ::Nothing) = nothing
 combine_axes(::Nothing, x) = x
 combine_axes(x, ::Nothing) = x
-combine_axes(x, y) = x == y ? x : throw(ArgumentError("Incompatible axis labels $x and $y"))
+combine_axes(x, y) = x == y ? x : axis_mismatch_error(x,y)
+function axis_mismatch_error(x, y)
+    i = findfirst(x .!= y)
+    throw(ArgumentError("AxesArrayTables may only be broadcast when their axis labels are equal. Got:\n    $(x[i]) and\n    $(y[i])"))
+end
 
 # Establish precedence (prefer AxisArrayTable over Array & throw on 3+ dimensions)
 Base.BroadcastStyle(::AxisArrayTableStyle, ::Broadcast.AbstractArrayStyle{T}) where T =
