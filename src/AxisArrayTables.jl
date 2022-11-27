@@ -107,7 +107,7 @@ Base.BroadcastStyle(::AxisArrayTableStyle, ::Broadcast.AbstractArrayStyle{T}) wh
 # end
 
 # Pretty printing
-Base.show(io::IO, m::AbstractAxisArrayTable) = pretty_table(io, m, row_labels=rows(m), header=cols(m))
+Base.show(io::IO, m::AbstractAxisArrayTable) = pretty_table(io, m, row_labels=rows(m))
 Base.show(io::IO, ::MIME"text/plain", m::AbstractAxisArrayTable) = show(io, m) # needed because AxisArrayTable <: AbstractMatrix
 
 # Custom "do what I mean" indexing
