@@ -2,6 +2,7 @@ using AxisArrayTables
 using Test
 using ExtendedDates
 using CSV
+using Plots
 
 # Construction and basic broadcasting
 a = AxisArrayTable(reshape(1:15, 5,3), period(Quarter, 1999, 2):period(Quarter, 2000, 2), [:a, :b, :c])
@@ -319,4 +320,11 @@ time a b c
 2000-Q1 4,0 9,0 14,0
 2000-Q2 5,0 10,0 15,0
 """
+end
+
+@testset "Plots" begin
+    plot(a.b)
+    plot!(a[2:end, 1])
+    plot!(b.c .+ 1)
+    scatter!(a.a)
 end

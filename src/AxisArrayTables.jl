@@ -5,6 +5,7 @@ using PrettyTables: pretty_table
 using AxisArrays: AxisArrays, AxisArray, (..)
 using ShiftedArrays: ShiftedArrays, lead, lag
 using CSV: CSV, write
+using RecipesBase: RecipesBase, @recipe
 
 export AxisArrayTable, .., lead, lag, row_labels, column_labels
 
@@ -166,5 +167,14 @@ table_with_row_labels(m::AbstractAxisArrayTable; row_label_header=:time) =
     (; Symbol(row_label_header)=>row_labels(m), (name=>view(m, :, i) for (i,name) in enumerate(column_labels(m)))...)
 CSV.write(file, m::AbstractAxisArrayTable; row_label_header=:time, kw...) =
     CSV.write(file, table_with_row_labels(m; row_label_header); kw...)
+
+# Define a Plots.jl recipe for plotting a single column
+@recipe function f(m::AbstractAxisArrayTable)
+    col = only(column_labels(m))
+    label --> string(col)
+    x = row_labels(m)
+    y = data(m)[:, col]
+    x, y
+end
 
 end
