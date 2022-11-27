@@ -6,7 +6,7 @@ using AxisArrays: AxisArrays, AxisArray, (..)
 using ShiftedArrays: ShiftedArrays, lead, lag
 using CSV: CSV, write
 
-export AxisArrayTable, .., lead, lag
+export AxisArrayTable, .., lead, lag, row_labels, column_labels
 
 abstract type AbstractAxisArrayTable{T} <: AbstractMatrix{T} end
 
@@ -27,14 +27,15 @@ end
 
 # getter method to avoid conflict with custom getproperty method
 data(m::AxisArrayTable) = getfield(m, :data)
+Base.parent(m::AxisArrayTable) = parent(data(m))
 
 # named axes
 named_axes(m::AbstractAxisArrayTable) = getproperty.(data(m).axes, :val)
-rows(m::AbstractAxisArrayTable) = named_axes(m)[1]
-cols(m::AbstractAxisArrayTable) = named_axes(m)[2]
+row_labels(m::AbstractAxisArrayTable) = named_axes(m)[1]
+column_labels(m::AbstractAxisArrayTable) = named_axes(m)[2]
 
 # Access by dot syntax `data.var3`
-Base.propertynames(m::AbstractAxisArrayTable) = cols(m)
+Base.propertynames(m::AbstractAxisArrayTable) = column_labels(m)
 Base.getproperty(m::AbstractAxisArrayTable, col::Symbol) = getindex(m, :, col)
 
 # Conform to the AbstractMatrix interface
@@ -51,7 +52,7 @@ end
 Base.setindex!(m::AbstractAxisArrayTable, val, inds...) = setindex!(data(m), val, inds...)
 
 # Optional
-Base.similar(m::AbstractAxisArrayTable, T::Type=eltype(m)) = AxisArrayTable(similar(data(m), T), rows(m), propertynames(m), check_unique=false)
+Base.similar(m::AbstractAxisArrayTable, T::Type=eltype(m)) = AxisArrayTable(similar(data(m), T), row_labels(m), column_labels(m), check_unique=false)
 
 # Conform to the Tables.jl interface
 # https://tables.juliadata.org/stable/#Implementing-the-Interface-(i.e.-becoming-a-Tables.jl-source)
@@ -107,7 +108,7 @@ Base.BroadcastStyle(::AxisArrayTableStyle, ::Broadcast.AbstractArrayStyle{T}) wh
 # end
 
 # Pretty printing
-Base.show(io::IO, m::AbstractAxisArrayTable) = pretty_table(io, m, row_labels=rows(m))
+Base.show(io::IO, m::AbstractAxisArrayTable) = pretty_table(io, m, row_labels=row_labels(m))
 Base.show(io::IO, ::MIME"text/plain", m::AbstractAxisArrayTable) = show(io, m) # needed because AxisArrayTable <: AbstractMatrix
 
 # Custom "do what I mean" indexing
@@ -125,16 +126,16 @@ Base.diff(m::AbstractAxisArrayTable, args...) = m - lag(m, args...)
 
 # Dynamically merge tables and adjust axes as needed
 function Base.merge(tables::Vararg{AbstractAxisArrayTable}) # TODO revise for simplicity and performance
-    r = union(rows.(tables)...)
+    r = union(row_labels.(tables)...)
     c = merge_colnames(tables...)
     data = Matrix{Union{eltype.(tables)..., Missing}}(undef, length(r), length(c))
     data .= missing
     res = AxisArrayTable(data, r, c, check_unique=false)
 
     i = 0
-    for t in tables, col in cols(t)
+    for t in tables, col in column_labels(t)
         i += 1
-        for row in rows(t) # Inefficient design due to upstream issue https://github.com/JuliaArrays/AxisArrays.jl/issues/212
+        for row in row_labels(t) # Inefficient design due to upstream issue https://github.com/JuliaArrays/AxisArrays.jl/issues/212
             res[row, i] = t[row, col]
         end
     end
@@ -142,9 +143,9 @@ function Base.merge(tables::Vararg{AbstractAxisArrayTable}) # TODO revise for si
     res
 end
 function merge_colnames(tables...)
-    res = Vector{Symbol}(undef, sum(length ∘ cols, tables))
+    res = Vector{Symbol}(undef, sum(length ∘ column_labels, tables))
     seen = Set{Symbol}()
-    for t in tables, c in cols(t)
+    for t in tables, c in column_labels(t)
         c2 = if c ∈ seen
             i = 2
             while Symbol(c, i) ∈ seen
@@ -162,7 +163,7 @@ end
 
 # Add row labels as a column to support saving to file when the row_labels keyword is unavailable
 table_with_row_labels(m::AbstractAxisArrayTable; row_label_header=:time) =
-    (; Symbol(row_label_header)=>rows(m), (name=>view(m, :, i) for (i,name) in enumerate(cols(m)))...)
+    (; Symbol(row_label_header)=>row_labels(m), (name=>view(m, :, i) for (i,name) in enumerate(column_labels(m)))...)
 CSV.write(file, m::AbstractAxisArrayTable; row_label_header=:time, kw...) =
     CSV.write(file, table_with_row_labels(m; row_label_header); kw...)
 

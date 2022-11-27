@@ -15,3 +15,6 @@ Tables.getcolumn(m::AxisArrayTable, ::Type{T}, col::Int, nm::Symbol) where T = m
 
 Work around an upstream bug https://github.com/JuliaData/Tables.jl/issues/316
 Tables.rows(m::AbstractAxisArrayTable) = Tables.RowIterator(m, Int(Tables.rowcount(m)))
+
+periods(m) = row_labels(m) # Convenience function for use with time periods
+Base.names(m::AbstractAxisArrayTable) = column_labels(m) # Consistency with DataFrames

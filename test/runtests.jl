@@ -8,6 +8,23 @@ a = AxisArrayTable(reshape(1:15, 5,3), period(Quarter, 1999, 2):period(Quarter, 
 b = similar(a)
 b .= 7
 
+@testset "row_labels, column_labels" begin
+    @test row_labels(a) === row_labels(b) === period(Quarter, 1999, 2):period(Quarter, 2000, 2)
+    @test column_labels(a) === column_labels(b) == [:a, :b, :c]
+end
+
+@testset "Matrix accessor" begin
+    @test Matrix(a) == reshape(1:15, 5,3)
+    @test Matrix(a) isa Matrix{Int}
+    @test Matrix(b) == fill(7, 5,3)
+    @test Matrix(b) isa Matrix{Int}
+end
+
+@testset "parent accessor" begin
+    @test parent(a) === reshape(1:15, 5,3)
+    @test parent(b) == fill(7, 5,3)
+end
+
 @testset "Display" begin
     @test string(a) == """\
 ┌─────────┬───┬────┬────┐
